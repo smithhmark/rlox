@@ -2,6 +2,8 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::io::{self, BufRead, Write};
+use std::iter;
+use std::str::Chars;
 
 #[derive(Debug)]
 enum TokenType {
@@ -72,16 +74,16 @@ impl fmt::Display for Token {
 }
 
 #[derive(Debug)]
-struct Scanner<I> {
-    iter: I,
+struct Scanner<'a>
+//where
+//I: Iterator<Item = char>
+{
+    iter: iter::Peekable<Chars<'a>>,
     buff: Vec<char>,
     line: usize,
 }
 
-impl<I> Iterator for Scanner<I>
-where
-    I: Iterator<Item = char>,
-{
+impl<'a> Iterator for Scanner<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -167,6 +169,82 @@ where
                         value: None,
                     })
                 }
+                '=' => match self.iter.peek() {
+                    Some('=') => {
+                        self.iter.next();
+                        return Some(Token {
+                            kind: TokenType::EqualEqual,
+                            lexeme: "==".to_string(),
+                            line: self.line,
+                            value: None,
+                        });
+                    }
+                    _ => {
+                        return Some(Token {
+                            kind: TokenType::Equal,
+                            lexeme: c.to_string(),
+                            line: self.line,
+                            value: None,
+                        })
+                    }
+                },
+                '!' => match self.iter.peek() {
+                    Some('=') => {
+                        self.iter.next();
+                        return Some(Token {
+                            kind: TokenType::BangEqual,
+                            lexeme: "!=".to_string(),
+                            line: self.line,
+                            value: None,
+                        });
+                    }
+                    _ => {
+                        return Some(Token {
+                            kind: TokenType::Bang,
+                            lexeme: c.to_string(),
+                            line: self.line,
+                            value: None,
+                        })
+                    }
+                },
+                '<' => match self.iter.peek() {
+                    Some('=') => {
+                        self.iter.next();
+                        return Some(Token {
+                            kind: TokenType::LessEqual,
+                            lexeme: "<=".to_string(),
+                            line: self.line,
+                            value: None,
+                        });
+                    }
+                    _ => {
+                        return Some(Token {
+                            kind: TokenType::Less,
+                            lexeme: c.to_string(),
+                            line: self.line,
+                            value: None,
+                        })
+                    }
+                },
+                '>' => match self.iter.peek() {
+                    Some('=') => {
+                        self.iter.next();
+                        return Some(Token {
+                            kind: TokenType::GreaterEqual,
+                            lexeme: ">=".to_string(),
+                            line: self.line,
+                            value: None,
+                        });
+                    }
+                    _ => {
+                        return Some(Token {
+                            kind: TokenType::Greater,
+                            lexeme: c.to_string(),
+                            line: self.line,
+                            value: None,
+                        })
+                    }
+                },
                 '\n' => self.line += 1,
                 _ => continue,
             };
@@ -175,10 +253,10 @@ where
     }
 }
 
-impl<I> Scanner<I> {
-    fn new(iter: I) -> Self {
+impl<'a> Scanner<'a> {
+    fn new(iter: Chars<'a>) -> Self {
         Scanner {
-            iter,
+            iter: iter.peekable(),
             buff: vec![],
             line: 1,
         }
