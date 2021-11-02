@@ -74,108 +74,59 @@ impl fmt::Display for Token {
 }
 
 #[derive(Debug)]
-struct Scanner<'a>
-{
+struct ScannerError {
+    line: usize,
+    desc: String,
+}
+
+#[derive(Debug)]
+struct Scanner<'a> {
     iter: iter::Peekable<Chars<'a>>,
     buff: Vec<char>,
     line: usize,
 }
 
 impl<'a> Iterator for Scanner<'a> {
+    //type Item = Result<Token, ScannerError>;
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(c) = self.iter.next() {
             match c {
                 '{' => {
-                    return Some(Token {
-                        kind: TokenType::LeftBrace,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::LeftBrace, c.to_string());
                 }
                 '}' => {
-                    return Some(Token {
-                        kind: TokenType::RightBrace,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::RightBrace, c.to_string());
                 }
                 '(' => {
-                    return Some(Token {
-                        kind: TokenType::LeftParen,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::LeftParen, c.to_string());
                 }
                 ')' => {
-                    return Some(Token {
-                        kind: TokenType::RightParen,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::RightParen, c.to_string());
                 }
                 '+' => {
-                    return Some(Token {
-                        kind: TokenType::Plus,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Plus, c.to_string());
                 }
                 ',' => {
-                    return Some(Token {
-                        kind: TokenType::Comma,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Comma, c.to_string());
                 }
                 '.' => {
-                    return Some(Token {
-                        kind: TokenType::Dot,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Dot, c.to_string());
                 }
                 '-' => {
-                    return Some(Token {
-                        kind: TokenType::Minus,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Minus, c.to_string());
                 }
                 ';' => {
-                    return Some(Token {
-                        kind: TokenType::Semicolon,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Semicolon, c.to_string());
                 }
                 '*' => {
-                    return Some(Token {
-                        kind: TokenType::Star,
-                        lexeme: c.to_string(),
-                        line: self.line,
-                        value: None,
-                    })
+                    return self.empty_token(TokenType::Star, c.to_string());
                 }
                 '=' => match self.iter.peek() {
                     Some('=') => {
                         self.iter.next();
-                        return Some(Token {
-                            kind: TokenType::EqualEqual,
-                            lexeme: "==".to_string(),
-                            line: self.line,
-                            value: None,
-                        });
+                        return self.empty_token(TokenType::EqualEqual, "==".to_string());
                     }
                     _ => {
                         return Some(Token {
@@ -189,59 +140,25 @@ impl<'a> Iterator for Scanner<'a> {
                 '!' => match self.iter.peek() {
                     Some('=') => {
                         self.iter.next();
-                        return Some(Token {
-                            kind: TokenType::BangEqual,
-                            lexeme: "!=".to_string(),
-                            line: self.line,
-                            value: None,
-                        });
+                        return self.empty_token(TokenType::BangEqual, "!=".to_string());
                     }
                     _ => {
-                        return Some(Token {
-                            kind: TokenType::Bang,
-                            lexeme: c.to_string(),
-                            line: self.line,
-                            value: None,
-                        })
+                        return self.empty_token(TokenType::Bang, c.to_string());
                     }
                 },
                 '<' => match self.iter.peek() {
                     Some('=') => {
                         self.iter.next();
-                        return Some(Token {
-                            kind: TokenType::LessEqual,
-                            lexeme: "<=".to_string(),
-                            line: self.line,
-                            value: None,
-                        });
+                        return self.empty_token(TokenType::LessEqual, "<=".to_string());
                     }
-                    _ => {
-                        return Some(Token {
-                            kind: TokenType::Less,
-                            lexeme: c.to_string(),
-                            line: self.line,
-                            value: None,
-                        })
-                    }
+                    _ => return self.empty_token(TokenType::Less, c.to_string()),
                 },
                 '>' => match self.iter.peek() {
                     Some('=') => {
                         self.iter.next();
-                        return Some(Token {
-                            kind: TokenType::GreaterEqual,
-                            lexeme: ">=".to_string(),
-                            line: self.line,
-                            value: None,
-                        });
+                        return self.empty_token(TokenType::GreaterEqual, ">=".to_string());
                     }
-                    _ => {
-                        return Some(Token {
-                            kind: TokenType::Greater,
-                            lexeme: c.to_string(),
-                            line: self.line,
-                            value: None,
-                        })
-                    }
+                    _ => return self.empty_token(TokenType::Greater, c.to_string()),
                 },
                 '/' => match self.iter.peek() {
                     Some('/') => {
@@ -253,16 +170,12 @@ impl<'a> Iterator for Scanner<'a> {
                         }
                     }
                     _ => {
-                        return Some(Token {
-                            kind: TokenType::Slash,
-                            lexeme: c.to_string(),
-                            line: self.line,
-                            value: None,
-                        })
+                        return self.empty_token(TokenType::Slash, c.to_string());
                     }
-
-
-                }
+                },
+                '\t' => continue,
+                '\r' => continue,
+                ' ' => continue,
                 '\n' => self.line += 1,
                 _ => continue,
             };
@@ -278,6 +191,24 @@ impl<'a> Scanner<'a> {
             buff: vec![],
             line: 1,
         }
+    }
+
+    fn empty_token(&self, kind: TokenType, lexeme: String) -> Option<Token> {
+        Some(Token {
+            kind,
+            lexeme,
+            line: self.line,
+            value: None,
+        })
+    }
+
+    fn scan_err(&self, kind: TokenType, lexeme: &str) -> Option<Token> {
+        Some(Token {
+            kind,
+            lexeme: lexeme.to_string(),
+            line: self.line,
+            value: None,
+        })
     }
 }
 
