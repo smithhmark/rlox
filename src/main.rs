@@ -87,8 +87,8 @@ struct Scanner<'a> {
 }
 
 impl<'a> Iterator for Scanner<'a> {
-    //type Item = Result<Token, ScannerError>;
-    type Item = Token;
+    type Item = Result<Token, ScannerError>;
+    //type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(c) = self.iter.next() {
@@ -129,12 +129,12 @@ impl<'a> Iterator for Scanner<'a> {
                         return self.empty_token(TokenType::EqualEqual, "==".to_string());
                     }
                     _ => {
-                        return Some(Token {
+                        return Some(Ok(Token {
                             kind: TokenType::Equal,
                             lexeme: c.to_string(),
                             line: self.line,
                             value: None,
-                        })
+                        }))
                     }
                 },
                 '!' => match self.iter.peek() {
@@ -177,7 +177,7 @@ impl<'a> Iterator for Scanner<'a> {
                 '\r' => continue,
                 ' ' => continue,
                 '\n' => self.line += 1,
-                _ => continue,
+                _ => return self.scan_err("invalid character"),
             };
         }
         None
@@ -193,31 +193,33 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn empty_token(&self, kind: TokenType, lexeme: String) -> Option<Token> {
-        Some(Token {
+    fn empty_token(&self, kind: TokenType, lexeme: String) -> Option<Result<Token, ScannerError>> {
+        Some(Ok(Token {
             kind,
             lexeme,
             line: self.line,
             value: None,
-        })
+        }))
     }
 
-    fn scan_err(&self, kind: TokenType, lexeme: &str) -> Option<Token> {
-        Some(Token {
-            kind,
-            lexeme: lexeme.to_string(),
+    fn scan_err(&self, message: &str) -> Option<Result<Token, ScannerError>> {
+        Some(Err(ScannerError {
             line: self.line,
-            value: None,
-        })
+            desc: message.to_string(),
+        }))
     }
 }
 
 fn run(source: &str) {
     //println!("{} lines of source", source.lines().count());
-    let tokens: Vec<Token> = Scanner::new(source.chars()).collect();
+    let tokens: Vec<Result<Token, ScannerError>> = Scanner::new(source.chars()).collect();
     println!("{} tokens from source", tokens.len());
     for tok in tokens.iter() {
-        println!("   {}", tok);
+        if let Ok(tok) = tok {
+            println!("   {}", tok);
+        } else {
+            println!("   {:?}", tok);
+        }
     }
 }
 
