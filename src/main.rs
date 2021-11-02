@@ -75,8 +75,6 @@ impl fmt::Display for Token {
 
 #[derive(Debug)]
 struct Scanner<'a>
-//where
-//I: Iterator<Item = char>
 {
     iter: iter::Peekable<Chars<'a>>,
     buff: Vec<char>,
@@ -245,6 +243,26 @@ impl<'a> Iterator for Scanner<'a> {
                         })
                     }
                 },
+                '/' => match self.iter.peek() {
+                    Some('/') => {
+                        while let Some(nchar) = self.iter.peek() {
+                            if *nchar == '\n' {
+                                break;
+                            }
+                            self.iter.next();
+                        }
+                    }
+                    _ => {
+                        return Some(Token {
+                            kind: TokenType::Slash,
+                            lexeme: c.to_string(),
+                            line: self.line,
+                            value: None,
+                        })
+                    }
+
+
+                }
                 '\n' => self.line += 1,
                 _ => continue,
             };
