@@ -173,6 +173,23 @@ impl<'a> Iterator for Scanner<'a> {
                         return self.empty_token(TokenType::Slash, c.to_string());
                     }
                 },
+                '"' => loop {
+                    let cnext = self.iter.peek();
+                    match cnext {
+                        Some('"') => {
+                            let ret =
+                                self.token(TokenType::String, self.buff.iter().collect::<String>());
+                            self.iter.next();
+                            self.buff.clear();
+                            return ret;
+                        }
+                        Some(c) => {
+                            self.buff.push(*c);
+                            self.iter.next();
+                        }
+                        None => return self.scan_err("Unterminated string literal"),
+                    }
+                },
                 '\t' => continue,
                 '\r' => continue,
                 ' ' => continue,
@@ -194,6 +211,15 @@ impl<'a> Scanner<'a> {
     }
 
     fn empty_token(&self, kind: TokenType, lexeme: String) -> Option<Result<Token, ScannerError>> {
+        Some(Ok(Token {
+            kind,
+            lexeme,
+            line: self.line,
+            value: None,
+        }))
+    }
+
+    fn token(&self, kind: TokenType, lexeme: String) -> Option<Result<Token, ScannerError>> {
         Some(Ok(Token {
             kind,
             lexeme,
