@@ -1,5 +1,6 @@
 use std::iter;
 use std::str::Chars;
+use peekmore::PeekMore;
 
 use crate::token::*;
 
@@ -11,7 +12,7 @@ pub struct ScannerError {
 
 #[derive(Debug)]
 pub struct Scanner<'a> {
-    iter: iter::Peekable<Chars<'a>>,
+    iter: peekmore::PeekMoreIterator<Chars<'a>>,
     buff: Vec<char>,
     line: usize,
 }
@@ -134,7 +135,7 @@ impl<'a> Iterator for Scanner<'a> {
 impl<'a> Scanner<'a> {
     pub fn new(iter: Chars<'a>) -> Self {
         Scanner {
-            iter: iter.peekable(),
+            iter: iter.peekmore(),
             buff: vec![],
             line: 1,
         }
